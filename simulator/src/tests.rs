@@ -224,7 +224,10 @@ fn test_accept_item_full_lane() {
     let mut lane = SingleBeltLane::new(BeltType::Regular, None);
     // Fill the lane
     for i in 0..5 {
-        lane.items[i] = Some((item(i + 1), u32::try_from(i).expect("Index fits in u32") * 50));
+        lane.items[i] = Some((
+            item(i + 1),
+            u32::try_from(i).expect("Index fits in u32") * 50,
+        ));
     }
 
     // Try to add another item
@@ -302,11 +305,23 @@ fn test_world_tick_multiple_belts() {
     world.tick();
 
     assert_eq!(
-        get_positions(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane),
+        get_positions(
+            &world
+                .belts
+                .get(&coord1)
+                .expect("Belt 1 not found")
+                .left_lane
+        ),
         vec![18]
     );
     assert_eq!(
-        get_positions(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane),
+        get_positions(
+            &world
+                .belts
+                .get(&coord2)
+                .expect("Belt 2 not found")
+                .left_lane
+        ),
         vec![28]
     );
 }
@@ -330,8 +345,26 @@ fn test_world_item_transfer_between_belts() {
     world.tick();
 
     // Item should have transferred from belt1 to belt2
-    assert_eq!(count_items(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane), 0);
-    assert_eq!(count_items(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane), 1);
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord1)
+                .expect("Belt 1 not found")
+                .left_lane
+        ),
+        0
+    );
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord2)
+                .expect("Belt 2 not found")
+                .left_lane
+        ),
+        1
+    );
 }
 
 #[test]
@@ -355,9 +388,36 @@ fn test_chain_of_three_belts() {
 
     // Tick 1: Item moves from belt1 to belt2
     world.tick();
-    assert_eq!(count_items(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane), 0);
-    assert_eq!(count_items(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane), 1);
-    assert_eq!(count_items(&world.belts.get(&coord3).expect("Belt 3 not found").left_lane), 0);
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord1)
+                .expect("Belt 1 not found")
+                .left_lane
+        ),
+        0
+    );
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord2)
+                .expect("Belt 2 not found")
+                .left_lane
+        ),
+        1
+    );
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord3)
+                .expect("Belt 3 not found")
+                .left_lane
+        ),
+        0
+    );
 
     // Continue ticking to move item through the chain
     // Item starts at position 2 on belt2, needs to reach 258 (32 ticks * 8 pos = 256)
@@ -367,7 +427,16 @@ fn test_chain_of_three_belts() {
     }
 
     // Eventually item should reach belt3
-    assert_eq!(count_items(&world.belts.get(&coord3).expect("Belt 3 not found").left_lane), 1);
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord3)
+                .expect("Belt 3 not found")
+                .left_lane
+        ),
+        1
+    );
 }
 
 #[test]
@@ -396,7 +465,16 @@ fn test_chain_of_three_belts_multiple_items() {
     }
 
     // Eventually item should reach belt3
-    assert_eq!(count_items(&world.belts.get(&coord3).expect("Belt 3 not found").left_lane), 3);
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord3)
+                .expect("Belt 3 not found")
+                .left_lane
+        ),
+        3
+    );
 
     // Verify items are completely transferred and compacted on belt 3
     let items = &world
@@ -507,7 +585,10 @@ fn test_compacting_four_items_maximum_density() {
     let mut lane = SingleBeltLane::new(BeltType::Regular, None);
     // Place four items that will compact to maximum density
     for i in 0..4 {
-        lane.items[i] = Some((item(i + 1), u32::try_from(i).expect("Index fits in u32") * 40));
+        lane.items[i] = Some((
+            item(i + 1),
+            u32::try_from(i).expect("Index fits in u32") * 40,
+        ));
     }
 
     // Tick until compacted
@@ -620,7 +701,10 @@ fn test_five_items_maximum_capacity() {
     let mut lane = SingleBeltLane::new(BeltType::Regular, None);
     // Fill lane to maximum capacity
     for i in 0..5 {
-        lane.items[i] = Some((item(i + 1), u32::try_from(i).expect("Index fits in u32") * 64));
+        lane.items[i] = Some((
+            item(i + 1),
+            u32::try_from(i).expect("Index fits in u32") * 64,
+        ));
     }
 
     assert_eq!(count_items(&lane), 5);
@@ -663,12 +747,24 @@ fn test_mixed_belt_types_in_world() {
 
     // Regular belt item should move 8 positions
     assert_eq!(
-        get_positions(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane),
+        get_positions(
+            &world
+                .belts
+                .get(&coord1)
+                .expect("Belt 1 not found")
+                .left_lane
+        ),
         vec![18]
     );
     // Fast belt item should move 16 positions
     assert_eq!(
-        get_positions(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane),
+        get_positions(
+            &world
+                .belts
+                .get(&coord2)
+                .expect("Belt 2 not found")
+                .left_lane
+        ),
         vec![26]
     );
 }
@@ -717,15 +813,37 @@ fn test_no_items_lost_during_world_tick() {
     belt1.left_lane.items[2] = Some((item(3), 200));
     world.add_belt(belt1);
 
-    let initial_count = count_items(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane)
-        + count_items(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane);
+    let initial_count = count_items(
+        &world
+            .belts
+            .get(&coord1)
+            .expect("Belt 1 not found")
+            .left_lane,
+    ) + count_items(
+        &world
+            .belts
+            .get(&coord2)
+            .expect("Belt 2 not found")
+            .left_lane,
+    );
 
     for _ in 0..50 {
         world.tick();
     }
 
-    let final_count = count_items(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane)
-        + count_items(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane);
+    let final_count = count_items(
+        &world
+            .belts
+            .get(&coord1)
+            .expect("Belt 1 not found")
+            .left_lane,
+    ) + count_items(
+        &world
+            .belts
+            .get(&coord2)
+            .expect("Belt 2 not found")
+            .left_lane,
+    );
 
     assert_eq!(
         initial_count, final_count,
@@ -771,8 +889,26 @@ fn test_extremely_fast_belt_transfer() {
 
     world.tick(); // Should transfer immediately
 
-    assert_eq!(count_items(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane), 0);
-    assert_eq!(count_items(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane), 1);
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord1)
+                .expect("Belt 1 not found")
+                .left_lane
+        ),
+        0
+    );
+    assert_eq!(
+        count_items(
+            &world
+                .belts
+                .get(&coord2)
+                .expect("Belt 2 not found")
+                .left_lane
+        ),
+        1
+    );
 }
 
 #[test]
@@ -792,11 +928,23 @@ fn test_world_with_disconnected_belts() {
 
     // Both should move independently
     assert_eq!(
-        get_positions(&world.belts.get(&Coordinate::new(0, 0)).expect("Belt 1 not found").left_lane),
+        get_positions(
+            &world
+                .belts
+                .get(&Coordinate::new(0, 0))
+                .expect("Belt 1 not found")
+                .left_lane
+        ),
         vec![18]
     );
     assert_eq!(
-        get_positions(&world.belts.get(&Coordinate::new(10, 10)).expect("Belt 2 not found").left_lane),
+        get_positions(
+            &world
+                .belts
+                .get(&Coordinate::new(10, 10))
+                .expect("Belt 2 not found")
+                .left_lane
+        ),
         vec![28]
     );
 }
@@ -837,10 +985,7 @@ fn test_stalled_items_dont_move_backward() {
     let positions = get_items_with_positions(&lane);
     eprintln!("AFTER: {positions:?}");
     for (id, pos) in &positions {
-        let initial = before
-            .iter()
-            .find(|(i, _)| i == id)
-            .map_or(0, |(_, p)| *p);
+        let initial = before.iter().find(|(i, _)| i == id).map_or(0, |(_, p)| *p);
         eprintln!("Item {id} moved from {initial} to {pos}");
         // No item should move backward
         assert!(
@@ -872,7 +1017,10 @@ fn test_rapid_succession_items() {
     // Place 4 items exactly 64 positions apart
     // Can't fit 5 items with 64-gap on a 256-position belt
     for i in 0..4 {
-        lane.items[i] = Some((item(i + 1), u32::try_from(i).expect("Index fits in u32") * 64));
+        lane.items[i] = Some((
+            item(i + 1),
+            u32::try_from(i).expect("Index fits in u32") * 64,
+        ));
     }
 
     for _ in 0..3 {
@@ -992,8 +1140,19 @@ fn test_continuous_flow_throughput() {
     }
 
     // Eventually all items should have transferred
-    let belt2_items = count_items(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane)
-        + count_items(&world.belts.get(&coord2).expect("Belt 2 not found").right_lane);
+    let belt2_items = count_items(
+        &world
+            .belts
+            .get(&coord2)
+            .expect("Belt 2 not found")
+            .left_lane,
+    ) + count_items(
+        &world
+            .belts
+            .get(&coord2)
+            .expect("Belt 2 not found")
+            .right_lane,
+    );
     assert!(belt2_items > 0, "Items should have flowed through");
 }
 
@@ -1074,8 +1233,19 @@ fn test_express_belt_overtaking_scenario() {
     world.tick();
 
     // Express belt moves 24 positions, so 240 + 24 = 264, should transfer
-    let total = count_items(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane)
-        + count_items(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane);
+    let total = count_items(
+        &world
+            .belts
+            .get(&coord1)
+            .expect("Belt 1 not found")
+            .left_lane,
+    ) + count_items(
+        &world
+            .belts
+            .get(&coord2)
+            .expect("Belt 2 not found")
+            .left_lane,
+    );
     assert_eq!(total, 1, "Item should have transferred");
 }
 
@@ -1180,7 +1350,10 @@ fn test_diagnostic_lane_full_behavior() {
 
     // Fill the lane
     for i in 0..5 {
-        lane.items[i] = Some((item(i + 1), u32::try_from(i).expect("Index fits in u32") * 52));
+        lane.items[i] = Some((
+            item(i + 1),
+            u32::try_from(i).expect("Index fits in u32") * 52,
+        ));
     }
 
     println!("Lane has {} items", count_items(&lane));
@@ -1234,11 +1407,23 @@ fn test_diagnostic_world_transfer_mechanics() {
     println!("=== Before Tick ===");
     println!(
         "Belt 1 left lane: {:?}",
-        get_items_with_positions(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane)
+        get_items_with_positions(
+            &world
+                .belts
+                .get(&coord1)
+                .expect("Belt 1 not found")
+                .left_lane
+        )
     );
     println!(
         "Belt 2 left lane: {:?}",
-        get_items_with_positions(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane)
+        get_items_with_positions(
+            &world
+                .belts
+                .get(&coord2)
+                .expect("Belt 2 not found")
+                .left_lane
+        )
     );
 
     world.tick();
@@ -1246,15 +1431,33 @@ fn test_diagnostic_world_transfer_mechanics() {
     println!("\n=== After Tick ===");
     println!(
         "Belt 1 left lane: {:?}",
-        get_items_with_positions(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane)
+        get_items_with_positions(
+            &world
+                .belts
+                .get(&coord1)
+                .expect("Belt 1 not found")
+                .left_lane
+        )
     );
     println!(
         "Belt 2 left lane: {:?}",
-        get_items_with_positions(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane)
+        get_items_with_positions(
+            &world
+                .belts
+                .get(&coord2)
+                .expect("Belt 2 not found")
+                .left_lane
+        )
     );
     println!(
         "Belt 2 right lane: {:?}",
-        get_items_with_positions(&world.belts.get(&coord2).expect("Belt 2 not found").right_lane)
+        get_items_with_positions(
+            &world
+                .belts
+                .get(&coord2)
+                .expect("Belt 2 not found")
+                .right_lane
+        )
     );
 }
 
@@ -1301,11 +1504,23 @@ fn test_edge_case_massive_speed_difference() {
         println!("\nTick {tick}");
         println!(
             "  Turbo belt: {:?}",
-            get_items_with_positions(&world.belts.get(&coord1).expect("Belt 1 not found").left_lane)
+            get_items_with_positions(
+                &world
+                    .belts
+                    .get(&coord1)
+                    .expect("Belt 1 not found")
+                    .left_lane
+            )
         );
         println!(
             "  Regular belt: {:?}",
-            get_items_with_positions(&world.belts.get(&coord2).expect("Belt 2 not found").left_lane)
+            get_items_with_positions(
+                &world
+                    .belts
+                    .get(&coord2)
+                    .expect("Belt 2 not found")
+                    .left_lane
+            )
         );
     }
 }

@@ -12,6 +12,7 @@ struct Coordinate {
 
 /// Represents a direction for belt connections
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 enum Direction {
     North,
     South,
@@ -20,22 +21,23 @@ enum Direction {
 }
 
 impl Direction {
-    fn offset(&self) -> (i32, i32) {
+    const fn offset(self) -> (i32, i32) {
         match self {
-            Direction::North => (0, -1),
-            Direction::South => (0, 1),
-            Direction::East => (1, 0),
-            Direction::West => (-1, 0),
+            Self::North => (0, -1),
+            Self::South => (0, 1),
+            Self::East => (1, 0),
+            Self::West => (-1, 0),
         }
     }
 }
 
 impl Coordinate {
-    fn new(x: i32, y: i32) -> Self {
+    const fn new(x: i32, y: i32) -> Self {
         Self { x, y }
     }
 
-    fn neighbor(&self, direction: Direction) -> Self {
+    #[allow(dead_code)]
+    const fn neighbor(self, direction: Direction) -> Self {
         let (dx, dy) = direction.offset();
         Self {
             x: self.x + dx,
@@ -49,15 +51,19 @@ enum BeltType {
     /// Also known as a yellow belt
     Regular,
     /// Also known as a red belt
+    #[allow(dead_code)]
     Fast,
     /// Also known as a blue belt
+    #[allow(dead_code)]
     Express,
     /// Also known as a green belt
+    #[allow(dead_code)]
     Turbo,
 }
 
 impl BeltType {
-    const fn tiles_traveled_per_second(&self) -> f32 {
+    #[allow(dead_code)]
+    const fn tiles_traveled_per_second(self) -> f32 {
         match self {
             Self::Regular => 1.875,
             Self::Fast => 3.75,
@@ -66,7 +72,8 @@ impl BeltType {
         }
     }
 
-    const fn item_throughput_per_second_one_lane(&self) -> f32 {
+    #[allow(dead_code)]
+    const fn item_throughput_per_second_one_lane(self) -> f32 {
         match self {
             Self::Regular => 7.5,
             Self::Fast => 15.0,
@@ -75,7 +82,7 @@ impl BeltType {
         }
     }
 
-    const fn positions_per_tick(&self) -> u32 {
+    const fn positions_per_tick(self) -> u32 {
         match self {
             Self::Regular => 8,
             Self::Fast => 16,
@@ -100,7 +107,7 @@ struct SingleBeltLane {
 }
 
 impl SingleBeltLane {
-    fn new(belt_type: BeltType, next_lane_coord: Option<Coordinate>) -> Self {
+    const fn new(belt_type: BeltType, next_lane_coord: Option<Coordinate>) -> Self {
         Self {
             items: [None, None, None, None, None],
             belt_type,
@@ -130,7 +137,7 @@ impl SingleBeltLane {
         let mut new_positions: Vec<(usize, u32, u32)> = Vec::new();
 
         // Process items from front to back
-        for (i, (idx, _item, current_pos)) in items_with_idx.iter().enumerate() {
+        for (idx, _item, current_pos) in &items_with_idx {
             let desired_position = current_pos + positions_per_tick;
             let mut can_move_to = desired_position;
 
@@ -143,7 +150,7 @@ impl SingleBeltLane {
                         // Would violate spacing - move as close as possible while maintaining 64-gap
                         // This allows items to compact when the front item stops
                         // But never move backward - stay at current position if that would happen
-                        let max_forward = if ahead_pos > 64 { ahead_pos - 64 } else { 0 };
+                        let max_forward = ahead_pos.saturating_sub(64);
                         can_move_to = max_forward.max(*current_pos);
                         break;
                     }
@@ -190,13 +197,11 @@ impl SingleBeltLane {
         let mut adjusted_position = target_position.min(255);
 
         // Check distance to existing items
-        for slot in &self.items {
-            if let Some((_, pos)) = slot {
-                if *pos < adjusted_position {
-                    let distance = adjusted_position - pos;
-                    if distance < 64 {
-                        adjusted_position = pos + 64;
-                    }
+        for (_, pos) in self.items.iter().flatten() {
+            if *pos < adjusted_position {
+                let distance = adjusted_position - pos;
+                if distance < 64 {
+                    adjusted_position = pos + 64;
                 }
             }
         }
@@ -219,7 +224,7 @@ struct SingleBelt {
 }
 
 impl SingleBelt {
-    fn new(
+    const fn new(
         coordinate: Coordinate,
         belt_type: BeltType,
         left_next: Option<Coordinate>,
@@ -249,6 +254,7 @@ impl World {
         self.belts.insert(belt.coordinate, belt);
     }
 
+    #[allow(dead_code)]
     fn get_lane_mut(&mut self, coord: Coordinate, is_left: bool) -> Option<&mut SingleBeltLane> {
         self.belts.get_mut(&coord).map(|belt| {
             if is_left {
@@ -343,20 +349,16 @@ fn main() {
 }
 
 fn print_world_state(world: &World) {
-    for (coord, belt) in &world.belts {
+    for belt in world.belts.values() {
         // println!("  Belt at ({}, {}):", coord.x, coord.y);
         print!("    Left lane: ");
-        for item_opt in &belt.left_lane.items {
-            if let Some((item, pos)) = item_opt {
-                print!("[Item {} at pos {}] ", item.get(), pos);
-            }
+        for (item, pos) in belt.left_lane.items.iter().flatten() {
+            print!("[Item {} at pos {}] ", item.get(), pos);
         }
         println!();
         print!("    Right lane: ");
-        for item_opt in &belt.right_lane.items {
-            if let Some((item, pos)) = item_opt {
-                print!("[Item {} at pos {}] ", item.get(), pos);
-            }
+        for (item, pos) in belt.right_lane.items.iter().flatten() {
+            print!("[Item {} at pos {}] ", item.get(), pos);
         }
         println!();
     }

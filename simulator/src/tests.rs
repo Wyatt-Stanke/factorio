@@ -410,26 +410,35 @@ fn test_chain_of_three_belts_multiple_items() {
         .map(|s| s.as_ref().unwrap().1)
         .collect::<Vec<_>>();
 
+    eprintln!("Items on belt 3: {:?}", items);
 
     assert_eq!(items.len(), 3);
-    // Ensure proper spacing - items should compact with at least 64 gap
+    // Ensure proper spacing
     assert_eq!(items[0], 255); // First item should be at the end
-    assert!(items[0] - items[1] >= 64, "Gap between first and second item should be >= 64, got {}", items[0] - items[1]);
-    assert!(items[1] - items[2] >= 64, "Gap between second and third item should be >= 64, got {}", items[1] - items[2]);
+    assert!(
+        items[0] - items[1] >= 64,
+        "Gap between first and second item should be >= 64, got {}",
+        items[0] - items[1]
+    );
+    assert!(
+        items[1] - items[2] >= 64,
+        "Gap between second and third item should be >= 64, got {}",
+        items[1] - items[2]
+    );
 }
 
 #[test]
 fn test_compacting_single_item_at_end() {
     let mut lane = SingleBeltLane::new(BeltType::Regular, None);
     lane.items[0] = Some((item(1), 240));
-    
+
     // Item should move to 248, then 255 and stop
     lane.tick_and_get_transfers();
     assert_eq!(get_positions(&lane), vec![248]);
-    
+
     lane.tick_and_get_transfers();
     assert_eq!(get_positions(&lane), vec![255]);
-    
+
     // Should stay at 255
     lane.tick_and_get_transfers();
     assert_eq!(get_positions(&lane), vec![255]);
@@ -441,16 +450,19 @@ fn test_compacting_two_items_at_end() {
     // Place two items that will reach the end
     lane.items[0] = Some((item(1), 240));
     lane.items[1] = Some((item(2), 170));
-    
+
     // After several ticks, items should compact at the end
     for _ in 0..10 {
         lane.tick_and_get_transfers();
     }
-    
+
     let positions = get_positions(&lane);
     assert_eq!(positions.len(), 2);
     assert_eq!(positions[1], 255); // Back item at end
-    assert!(positions[1] - positions[0] >= 64, "Items should maintain 64+ gap");
+    assert!(
+        positions[1] - positions[0] >= 64,
+        "Items should maintain 64+ gap"
+    );
 }
 
 #[test]
@@ -460,25 +472,34 @@ fn test_compacting_three_items_at_end() {
     lane.items[0] = Some((item(1), 50));
     lane.items[1] = Some((item(2), 120));
     lane.items[2] = Some((item(3), 190));
-    
+
     // Tick until all items reach the end and compact
     for _ in 0..15 {
         lane.tick_and_get_transfers();
     }
-    
+
     let positions = get_positions(&lane);
     assert_eq!(positions.len(), 3);
     assert_eq!(positions[2], 255); // Last item at end
-    
+
     // Check spacing between consecutive items
     for i in 1..positions.len() {
-        let gap = positions[i] - positions[i-1];
-        assert!(gap >= 64, "Gap between items {} and {} is {}, should be >= 64", i-1, i, gap);
+        let gap = positions[i] - positions[i - 1];
+        assert!(
+            gap >= 64,
+            "Gap between items {} and {} is {}, should be >= 64",
+            i - 1,
+            i,
+            gap
+        );
     }
-    
+
     // First item should be at approximately 255 - 64*2 = 127
-    assert!(positions[0] >= 127 - 8 && positions[0] <= 127 + 8, 
-            "First item should be around 127, got {}", positions[0]);
+    assert!(
+        positions[0] >= 127 - 8 && positions[0] <= 127 + 8,
+        "First item should be around 127, got {}",
+        positions[0]
+    );
 }
 
 #[test]
@@ -488,21 +509,26 @@ fn test_compacting_four_items_maximum_density() {
     for i in 0..4 {
         lane.items[i] = Some((item(i + 1), i as u32 * 40));
     }
-    
+
     // Tick until compacted
     for _ in 0..20 {
         lane.tick_and_get_transfers();
     }
-    
+
     let positions = get_positions(&lane);
     assert_eq!(positions.len(), 4);
     assert_eq!(positions[3], 255); // Last item at end
-    
+
     // All gaps should be exactly 64 (or very close due to movement granularity)
     for i in 1..positions.len() {
-        let gap = positions[i] - positions[i-1];
+        let gap = positions[i] - positions[i - 1];
         assert!(gap >= 64, "Gap {} is too small: {}", i, gap);
-        assert!(gap <= 72, "Gap {} is too large: {} (items not fully compacted)", i, gap);
+        assert!(
+            gap <= 72,
+            "Gap {} is too large: {} (items not fully compacted)",
+            i,
+            gap
+        );
     }
 }
 
@@ -511,18 +537,18 @@ fn test_compacting_progressive_arrival() {
     let mut lane = SingleBeltLane::new(BeltType::Regular, None);
     // First item arrives at end
     lane.items[0] = Some((item(1), 250));
-    
+
     lane.tick_and_get_transfers();
     assert_eq!(get_positions(&lane), vec![255]);
-    
+
     // Add second item while first is at end
     lane.items[1] = Some((item(2), 100));
-    
+
     // Tick until second item reaches its position behind first
     for _ in 0..25 {
         lane.tick_and_get_transfers();
     }
-    
+
     let positions = get_positions(&lane);
     assert_eq!(positions.len(), 2);
     assert_eq!(positions[1], 255);
@@ -536,12 +562,12 @@ fn test_compacting_with_fast_belt() {
     // Fast belt moves 16 positions per tick
     lane.items[0] = Some((item(1), 100));
     lane.items[1] = Some((item(2), 30));
-    
+
     // Tick until items reach end
     for _ in 0..15 {
         lane.tick_and_get_transfers();
     }
-    
+
     let positions = get_positions(&lane);
     assert_eq!(positions.len(), 2);
     assert_eq!(positions[1], 255);
@@ -554,17 +580,21 @@ fn test_compacting_prevents_overlapping() {
     // Place items very close together
     lane.items[0] = Some((item(1), 200));
     lane.items[1] = Some((item(2), 240));
-    
+
     // Item 2 should reach 255 quickly
     for _ in 0..5 {
         lane.tick_and_get_transfers();
     }
-    
+
     let positions = get_positions(&lane);
     assert_eq!(positions.len(), 2);
-    
+
     // Verify no overlap
-    assert!(positions[1] - positions[0] >= 40, "Items got worse! Gap: {}", positions[1] - positions[0]);
+    assert!(
+        positions[1] - positions[0] >= 40,
+        "Items got worse! Gap: {}",
+        positions[1] - positions[0]
+    );
 }
 
 #[test]

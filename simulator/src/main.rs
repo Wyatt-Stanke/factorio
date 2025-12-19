@@ -113,29 +113,27 @@ impl SingleBeltLane {
     fn tick_and_get_transfers(&mut self) -> Vec<(Item, u32)> {
         let mut transfers = Vec::new();
         let positions_per_tick = self.belt_type.positions_per_tick();
-        
+
         // Collect all items with their array indices
         let mut items_with_idx: Vec<(usize, Item, u32)> = self
             .items
             .iter()
             .enumerate()
-            .filter_map(|(idx, slot)| {
-                slot.as_ref().map(|(item, pos)| (idx, *item, *pos))
-            })
+            .filter_map(|(idx, slot)| slot.as_ref().map(|(item, pos)| (idx, *item, *pos)))
             .collect();
-        
+
         // Sort by position in reverse order (front items first)
         items_with_idx.sort_by_key(|&(_, _, pos)| std::cmp::Reverse(pos));
-        
+
         // Track new positions for each item: (idx, actual_pos, spacing_pos)
         // spacing_pos is used for spacing calculations by items behind
         let mut new_positions: Vec<(usize, u32, u32)> = Vec::new();
-        
+
         // Process items from front to back
         for (i, (idx, _item, current_pos)) in items_with_idx.iter().enumerate() {
             let desired_position = current_pos + positions_per_tick;
             let mut can_move_to = desired_position;
-            
+
             // Check if moving would violate spacing with any item ahead
             for &(_check_idx, _, ahead_pos) in &new_positions {
                 // ahead_pos is where an item ahead will be after this tick
@@ -151,7 +149,7 @@ impl SingleBeltLane {
                     }
                 }
             }
-            
+
             // Store the calculated position for spacing checks
             // For items beyond 255 without next lane, store 255 for spacing
             let spacing_pos = if can_move_to > 255 && self.next_lane_coord.is_none() {
@@ -159,10 +157,10 @@ impl SingleBeltLane {
             } else {
                 can_move_to
             };
-            
+
             new_positions.push((*idx, can_move_to, spacing_pos));
         }
-        
+
         // Apply the new positions
         for (idx, new_pos, _) in new_positions {
             if let Some((item, position)) = &mut self.items[idx] {
@@ -181,10 +179,9 @@ impl SingleBeltLane {
                 }
             }
         }
-        
+
         transfers
     }
-
 
     /// Attempts to accept an item from a previous lane
     /// Returns true if successful, false if there's no space

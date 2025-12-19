@@ -46,4 +46,4 @@ jobs:
           ${{ runner.os }}-cargo-build-target-
     
     - name: Run clippy
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      run: cargo clippy --all-targets --all-features --verbose -- -D warnings

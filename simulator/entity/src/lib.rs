@@ -7,11 +7,13 @@ pub struct Size {
 
 impl Size {
     /// Creates a new Size.
+    #[must_use]
     pub const fn new(width: u32, height: u32) -> Self {
         Self { width, height }
     }
 
     /// Creates a square Size.
+    #[must_use]
     pub const fn square(side: u32) -> Self {
         Self {
             width: side,

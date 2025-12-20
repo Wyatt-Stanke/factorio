@@ -3,5 +3,13 @@
 version = 4
 
 [[package]]
-name = "simulator"
+name = "simulator-belt"
+version = "0.1.0"
+
+[[package]]
+name = "simulator-entity"
+version = "0.1.0"
+
+[[package]]
+name = "simulator-surface"
 version = "0.1.0"

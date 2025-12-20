@@ -10,7 +10,7 @@ RUN apt-get update
 ENV CARGO_HOME="/usr/local/cargo"
 ENV RUSTUP_HOME="/usr/local/rustup"
 
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y -c rust-src
 ENV PATH="${CARGO_HOME}/bin:${PATH}"
 
 RUN echo 'export RUSTUP_HOME="/usr/local/rustup"' >> /etc/bash.bashrc

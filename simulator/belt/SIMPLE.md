@@ -62,17 +62,17 @@ Then, as follows:
 
 For each item:
 
-$$pos_{i\_new}=pos_i-v$$
+$$newpos_{i}=pos_i-v$$
 
 ### 2. Apply spacing constraints
 
 For each item except the lead item, enforce that
 
-$$pos_{i\_new} \ge pos_{(i-1)\_new} + \Delta$$
+$$newpos_{i} \ge newpos_{(i-1)} + \Delta$$
 
 If not, reduce movement so that
 
-$$pos_{i\_new} = pos_{(i-1)\_new} + \Delta$$
+$$newpos_{i} = newpos_{(i-1)} + \Delta$$
 
 ### 3. Overlap behavior
 

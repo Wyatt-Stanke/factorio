@@ -1,32 +1,79 @@
 # Lane Algorithm - Simple
 
-Notes:
+## Model Overview
 
-- A lane is one side of a belt.
-- A belt is a collection of two lanes. Belts are less important to model than lanes. Connections are between lanes, not belts.
+- A *lane* is one side of a belt.
+- A *belt* is a collection of two lanes, but belt grouping is not important to simulation. All connections are between lanes, not belts.
 
-Each lane stores:
+## Lane State
 
-- A mutable array of eight items (`[<T>; 8]`), strictly ordered by position ascending, each of those items being an `Option` of a tuple with two parts:
-  - A `u32` position on the lane. 0 is at the end of the lane, and the maximum as at the very start of the lane.
-  - A generic `Item` type
-- A `u32` `length`. The default length is 256, and the position will be out this value.
-For example, with the default length, the position could be anywhere from 0 to 255. This will never change.
-- An optional outwards connection to a different lane. This will never change.
+Each lane maintains its own state. A lane contains the following immutable parameters:
 
-## Tick Procedure
+- `length: u32` - spatial resolution of the lane. Default: `256`.
+- `connection_out: Option<KaneId>` - a fixed connection to at most one destination lane. If None, items cannot leave the lane, and must stop at the end.
 
-On every tick, every item attempts to move forward a number of positions along the lane. The items furthest along the lane (items with a lower position) must be processed first. Assuming 60 ticks per second, here are the positions/tick of each tier of belt type:
+Each lane contains the following mutable, per-tick state:
 
-| Type    | P/T |
-| ------- | --- |
-| Regular | 8   |
-| Fast    | 16  |
-| Express | 24  |
-| Turbo   | 32  |
+- `items: [Option<(position: u32, item: Item)>; 8]`
+  - Always sorted by ascending position (lower positions first).
+  - Positions range `0 .. length-1` (`0..255` on default).
+  - Each occupied slot represents one item.
+  - At most eight entrie, typically 4 or less.
 
-An item can move forward a maximum of `n` positions. The position of item `i` must be less than or equal to the position of item `i + 1` minus 64 positions. If an item would collide with the next item ahead, it stops 64 spaces behind that item.
+## Position
 
-Under normal conditions, a lane should not have more than 4 items on it at a time. However, due to the way inserters insert into non-fully compacted lanes, there may be 5 or more items in a lane. Items may be be in an overlapping state, but you may not cause any new overlaps to be created. If an item is overlapping with a previous item, then it does not move until there is greater than 64 positions of space ahead of it (regular spacing rules), and then it moves like normal.
+Position 0 is the end of the lane (exit point), and position `length − 1` is the start of the lane (entry point). Items move toward position 0, and must maintain at least 64 units of spacing relative to the item ahead.
 
-Tick updates read from the old state and write to a new state in a two-phase simulation. Connection transfers go into the new lane state. After all lanes update, swap buffers.
+## Tick Model
+
+Simulation is two-buffered:
+
+1. Read from `current` lane state.
+2. Produce a complete `next` lane state..
+3. After all lanes complete their write phase, swap the buffers.
+
+Tick order does not matter, because all items read from old state.
+
+## Movement Speed per Belt Tier
+
+Each item moves forward up to `S` position units per tick:  
+
+| Belt Type | Speed S (pos/tick) |
+| --------- | ------------------ |
+| Regular   | 8                  |
+| Fast      | 16                 |
+| Express   | 24                 |
+| Turbo     | 32                 |
+
+Speed is lane-wide and constant.
+
+## Item Movement Rules
+
+Items must be processed in ascending position order, in which the item closest to position `0` moves first.
+
+- $pos_i$ = current position of item `i`
+- $pos_{next}$ = position of the item with the highest position on the connecting lane, if applicable
+- $v$ = movement speed for this lane type
+- $\Delta$ = maximum allowed spacing distance = 64
+
+Then, as follows:
+
+### 1. Compute tentative movement
+
+For each item:
+
+$$pos_{i\_new}=pos_i-v$$
+
+### 2. Apply spacing constraints
+
+For each item except the lead item, enforce that
+
+$$pos_{i\_new} \ge pos_{(i-1)\_new} + \Delta$$
+
+If not, reduce movement so that
+
+$$pos_{i\_new} = pos_{(i-1)\_new} + \Delta$$
+
+### 3. Overlap behavior
+
+If an item begins the tick overlapping the item ahead ($pos_i \le pos_{i-1} + \Delta$), then the item does not move at all this tick unless $pos_i \ge pos_{i-1} + \Delta$ due to movement of the item ahead. Items may be created in a way that is overlapping, but simulating belts should not create any more overlaps then the previous tick.

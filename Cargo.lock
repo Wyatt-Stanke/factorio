@@ -11,5 +11,9 @@ name = "simulator-entity"
 version = "0.1.0"
 
 [[package]]
+name = "simulator-lane-compiler"
+version = "0.1.0"
+
+[[package]]
 name = "simulator-surface"
 version = "0.1.0"

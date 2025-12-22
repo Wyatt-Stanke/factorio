@@ -10,7 +10,9 @@
 Each lane maintains its own state. A lane contains the following immutable parameters:
 
 - `length: u32` - spatial resolution of the lane. Default: `256`.
-- `connection_out: Option<KaneId>` - a fixed connection to at most one destination lane. If None, items cannot leave the lane, and must stop at the end.
+- `connection_out: Option<LaneRef>` - a fixed connection to at most one destination lane. If None, items cannot leave the lane, and must stop at the end. `LaneRef` is a struct that contains two properties:
+  - `lane_id: T` - An ID refrence to a different lane
+  - `lane_length: u32` - The `length` of the referenced lane.
 
 Each lane contains the following mutable, per-tick state:
 
@@ -53,6 +55,7 @@ Items must be processed in ascending position order, in which the item closest t
 
 - $pos_i$ = current position of item `i`
 - $pos_{next}$ = position of the item with the highest position on the connecting lane, if applicable
+- $nextlength$ = length of the connecting lane, if applicable
 - $v$ = movement speed for this lane type
 - $\Delta$ = maximum allowed spacing distance = 64
 
@@ -62,7 +65,13 @@ Then, as follows:
 
 For each item:
 
-$$newpos_{i}=pos_i-v$$
+If `connection_out == None`:
+
+$$newpos_{i}=max(0, pos_i-v)$$
+
+Else:
+
+$$newpos_{i}=max((pos_{next} - nextlength) - \Delta, pos_i-v)$$
 
 ### 2. Apply spacing constraints
 
@@ -77,3 +86,5 @@ $$newpos_{i} = newpos_{(i-1)} + \Delta$$
 ### 3. Overlap behavior
 
 If an item begins the tick overlapping the item ahead ($pos_i \le pos_{i-1} + \Delta$), then the item does not move at all this tick unless $pos_i \ge pos_{i-1} + \Delta$ due to movement of the item ahead. Items may be created in a way that is overlapping, but simulating belts should not create any more overlaps then the previous tick.
+
+###

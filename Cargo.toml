@@ -1,5 +1,5 @@
 [workspace]
-members = ["simulator"]
+members = ["simulator/*"]
 resolver = "2"
 
 [workspace.package]

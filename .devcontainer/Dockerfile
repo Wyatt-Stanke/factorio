@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/universal:5@sha256:87508bfb3a85b7c13e45739b8fc2ea98a832f28500031d77e400eda8ccedd474
+FROM mcr.microsoft.com/devcontainers/universal:6@sha256:584e41561451c910dcd96221634be07545803aed9cd437a60288f06ddeaf5880
 
 RUN apt-get update
 RUN apt-get install -y \
